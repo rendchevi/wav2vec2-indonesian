@@ -61,7 +61,10 @@ class ModelArguments:
         metadata={"help": "Where do you want to store the pretrained models downloaded from huggingface.co"},
     )
     freeze_feature_extractor: Optional[bool] = field(
-        default=True, metadata={"help": "Whether to freeze the feature extractor layers of the model."}
+        default=False, metadata={"help": "Whether to freeze the feature extractor layers of the model."}
+    )
+    freeze_all_but_cls: Optional[bool] = field(
+        default=False, metadata={"help": "Whether to freeze all layers but the linear layer."}
     )
     attention_dropout: Optional[float] = field(
         default=0.1, metadata={"help": "The dropout ratio for the attention probabilities."}
@@ -418,7 +421,7 @@ def main():
     # Load raw val dataset
     eval_dataset = datasets.load_dataset(
         "csv",
-        data_files = data_args.val_data_files,
+        data_files = data_args.eval_data_files,
         column_names = ["path", "sentence"],
         delimiter = "|",
         cache_dir = model_args.cache_dir,
@@ -439,14 +442,14 @@ def main():
     # Apply preprocessing function
     train_dataset = train_dataset.map(PrepDataset(
         processor = processor,
-        master_path = "/mnt/data3/rendi_workspace/rendi_datasets/cv-corpus-7.0-2021-07-21-id-prep/train",
+        master_path = data_args.train_data_files.split("/")[:-1],
         chars_to_ignore_regex = '[\,\?\.\!\-\;\:\"\“\%\‘\”\�]',
     ))
     train_dataset = train_dataset.shuffle()
-    
+
     eval_dataset = eval_dataset.map(PrepDataset(
         processor = processor,
-        master_path = "/mnt/data3/rendi_workspace/rendi_datasets/cv-corpus-7.0-2021-07-21-id-prep/test",
+        master_path = data_args.eval_data_files.split("/")[:-1],
         chars_to_ignore_regex = '[\,\?\.\!\-\;\:\"\“\%\‘\”\�]',
     ))
 
@@ -489,8 +492,29 @@ def main():
 
         return {"wer": wer}
 
-    if model_args.freeze_feature_extractor:
+    if model_args.freeze_feature_extractor == True:
         model.freeze_feature_extractor()
+
+    if model_args.freeze_all_but_cls == True:
+        for p in model.parameters():
+            p.requires_grad = False
+        model.lm_head.parameters().requires_Grad = True
+
+    total_param = sum(p.numel() for p in model.parameters())
+    trainable_param = sum(p.numel() for p in model.parameters() if p.requires_grad == True)
+    fe_param = sum(p.numel() for p in model.wav2vec2.feature_extractor.parameters())
+    fp_param = sum(p.numel() for p in model.wav2vec2.feature_projection.parameters())
+    enc_param = sum(p.numel() for p in model.wav2vec2.encoder.parameters())
+    cls_param = sum(p.numel() for p in model.lm_head.parameters())
+
+    print(f"Feature Encoder Params  : {fe_param:,}")
+    print(f"Feature Projector Params: {fp_param:,}")
+    print(f"Encoder Params          : {enc_param:,}")
+    print(f"Classifier Head Params  : {cls_param:,}")
+    print("===============================================")
+    print(f"Total Params            : {total_param:,}")
+    print(f"Trainable Param         : {trainable_param}")
+    print("===============================================")
 
     # Data collator
     data_collator = DataCollatorCTCWithPadding(processor=processor, padding=True)

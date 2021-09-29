@@ -16,7 +16,8 @@ python finetuning.py \
     --learning_rate="1e-4" \
     --warmup_steps="300" \
     --fp16 \
-    --freeze_feature_extractor \
+    --freeze_feature_extractor false \
+    --freeze_all_but_cls true \
     --save_steps="100" \
     --eval_steps="100" \
     --save_total_limit="1" \
