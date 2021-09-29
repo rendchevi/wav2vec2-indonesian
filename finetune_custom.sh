@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+python finetuning.py \
+    --model_name_or_path="facebook/wav2vec2-large-xlsr-53" \
+    --project_name="wav2vec2-id-" \
+    --train_data_files="/mnt/data3/rendi_workspace/rendi_datasets/cv-corpus-7.0-2021-07-21-id-prep/train/metadata.txt" \
+    --eval_data_files="/mnt/data3/rendi_workspace/rendi_datasets/cv-corpus-7.0-2021-07-21-id-prep/test/metadata.txt" \
+    --vocab_dict_path="/mnt/data2/rendi_workspace/ASR/dev-orca/config/vocab_cv_id.json" \
+    --output_dir=/mnt/data3/rendi_workspace/wav2vec-indonesian \
+    --cache_dir=/mnt/data3/cache_huggingface \
+    --overwrite_output_dir \
+    --num_train_epochs="60" \
+    --per_device_eval_batch_size="4" \
+    --per_device_train_batch_size="4" \
+    --gradient_accumulation_steps="8" \
+    --evaluation_strategy="steps" \
+    --learning_rate="1e-4" \
+    --warmup_steps="300" \
+    --fp16 \
+    --freeze_feature_extractor \
+    --save_steps="100" \
+    --eval_steps="100" \
+    --save_total_limit="1" \
+    --logging_steps="100" \
+    --group_by_length \
+    --feat_proj_dropout="0.04" \
+    --layerdrop="0.041" \
+    --attention_dropout="0.094" \
+    --activation_dropout="0.055" \
+    --hidden_dropout="0.047" \
+    --mask_time_prob="0.4" \
+    --gradient_checkpointing \
+    --do_train --do_eval \
+    --cache_dir=/workspace/data \
+    --dataloader_num_workers="2"
