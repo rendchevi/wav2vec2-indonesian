@@ -364,7 +364,7 @@ def main():
         model_args, data_args, training_args = parser.parse_args_into_dataclasses()
 
     os.environ["WANDB_ENTITY"] = "kata-research"
-    os.environ["WANDB_PROJECT"] = data_args.project_name
+    os.environ["WANDB_PROJECT"] = model_args.project_name
     os.environ["WANDB_LOG_MODEL"] = "true"
 
     # Detecting last checkpoint.
